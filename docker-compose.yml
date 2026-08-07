@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  ocr-service:
+    build: ./ocr-service
+    container_name: ocr-service
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    environment:
+      PREPROCESS_ENABLED: "true"
+      PREPROCESS_MAX_SIZE: "4000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mysql:
+    image: mysql:8.0
+    container_name: ocr-order-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ocr_orders
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  laravel-app:
+    build:
+      context: ./laravel-app
+      dockerfile: Dockerfile
+    container_name: laravel-app
+    ports:
+      - "8080:8000"
+    depends_on:
+      - mysql
+      - ocr-service
+    environment:
+      OCR_SERVICE_URL: http://ocr-service:8000
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ocr_orders
+      DB_USERNAME: laravel
+      DB_PASSWORD: laravel
+    volumes:
+      - ./laravel-app:/var/www/html
+
+volumes:
+  mysql-data:
