@@ -1,24 +1,27 @@
 <?php
 
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
+namespace App\Http\Middleware;
 
-return Application::configure(basePath: dirname(__DIR__))
-    ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
-    )
-    ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->api(append: [
-            \App\Http\Middleware\EnsureApiToken::class,
-        ]);
-    })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
-        );
-    })->create();
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class EnsureApiToken
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $token = config('services.ocr.auth_token');
+
+        if (empty($token)) {
+            return $next($request);
+        }
+
+        $provided = $request->bearerToken() ?? $request->header('X-Auth-Token');
+
+        if (! is_string($provided) || ! hash_equals($token, $provided)) {
+            abort(401, 'Unauthorized');
+        }
+
+        return $next($request);
+    }
+}

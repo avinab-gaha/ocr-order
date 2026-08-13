@@ -13,7 +13,13 @@ WORKDIR /var/www/html
 
 COPY . .
 
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader \
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_MEMORY_LIMIT=-1
+
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-progress \
+        --no-scripts \
+    || composer install --no-interaction --prefer-dist --optimize-autoloader --no-progress \
+        --no-scripts \
     && mkdir -p storage/app/public storage/app/private storage/framework/cache/data \
        storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
