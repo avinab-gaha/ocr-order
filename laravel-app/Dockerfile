@@ -1,8 +1,10 @@
-FROM php:8.3-cli
+FROM php:8.3-apache
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git unzip libzip-dev libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_mysql zip \
+    git unzip libzip-dev libsqlite3-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip \
+    && a2enmod rewrite headers \
+    && sed -ri 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -11,12 +13,14 @@ WORKDIR /var/www/html
 
 COPY . .
 
-# NOTE: this runs `composer install` at image build time, which requires
-# network access to packagist.org / repo.packagist.org from wherever you
-# build this image (not available inside the assistant's sandbox that
-# generated this project).
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader \
+    && mkdir -p storage/app/public storage/app/private storage/framework/cache/data \
+       storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000
 
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
