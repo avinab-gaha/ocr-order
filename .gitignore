@@ -1,23 +1,17 @@
-# Environment files
-.env
-.env.*
-!.env.example
-
-# Laravel
+# ── Laravel app ───────────────────────────────────────────────
+laravel-app/.env
 laravel-app/vendor/
 laravel-app/node_modules/
-laravel-app/storage/logs/*
-laravel-app/storage/framework/cache/*
-laravel-app/storage/framework/sessions/*
-laravel-app/storage/framework/views/*
-laravel-app/bootstrap/cache/*
+laravel-app/.phpunit.result.cache
+laravel-app/storage/logs/*.log
+laravel-app/storage/app/private/order-uploads/*
+laravel-app/storage/app/public/temp/
 
-# Python / OCR service
-ocr-service/venv/
+# ── OCR service ───────────────────────────────────────────────
 ocr-service/__pycache__/
-ocr-service/*.pyc
-ocr-service/.paddleocr/
+ocr-service/.venv/
+ocr-service/venv/
 
-# OS files
-.DS_Store
+# ── OS / editor ───────────────────────────────────────────────
 Thumbs.db
+.DS_Store

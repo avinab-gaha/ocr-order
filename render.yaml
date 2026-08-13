@@ -1,0 +1,69 @@
+# Render blueprint for the OCR Order project.
+# Two web services, one per Dockerfile. Reproduces the services that are
+# currently configured manually in the Render dashboard. Secrets marked
+# `sync: false` are set once in the dashboard after the initial deploy.
+services:
+  - type: web
+    name: ocr-order-service
+    runtime: docker
+    rootDir: ocr-service
+    healthCheckPath: /health
+    envVars:
+      - key: PREPROCESS_ENABLED
+        value: "true"
+      - key: PREPROCESS_MAX_SIZE
+        value: "4000"
+      - key: OCR_LANG
+        value: japan
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  - type: web
+    name: ocr-order
+    runtime: docker
+    rootDir: laravel-app
+    healthCheckPath: /up
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        sync: false
+      - key: APP_KEY
+        sync: false
+      - key: OCR_SERVICE_URL
+        fromService:
+          name: ocr-order-service
+          type: web
+          property: url
+      - key: OCR_SERVICE_TIMEOUT
+        value: "300"
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AUTH_TOKEN
+        sync: false
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: LOG_LEVEL
+        value: error

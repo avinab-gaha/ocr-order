@@ -1,26 +1,24 @@
 <?php
 
-namespace App\Http\Middleware;
-
-use Closure;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
-class EnsureApiToken
-{
-    /**
-     * Protect the API with a single shared bearer token stored in AUTH_TOKEN.
-     * When AUTH_TOKEN is empty the check is disabled (convenient for local
-     * development); in production always set it.
-     */
-    public function handle(Request $request, Closure $next): Response
-    {
-        $expected = config('services.orders.auth_token', '');
-
-        if ($expected !== '' && ! hash_equals($expected, (string) $request->bearerToken())) {
-            abort(401, 'Unauthorized');
-        }
-
-        return $next($request);
-    }
-}
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->api(append: [
+            \App\Http\Middleware\EnsureApiToken::class,
+        ]);
+    })
+    ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+        );
+    })->create();

@@ -46,6 +46,12 @@ return [
         'timeout' => env('OCR_SERVICE_TIMEOUT', 60),
     ],
 
+    'orders' => [
+        // Shared bearer token that protects the /api/* routes.
+        // Leave empty to disable the check (local development only).
+        'auth_token' => env('AUTH_TOKEN'),
+    ],
+
     'document_validator' => [
         'min_score' => env('DOCUMENT_VALIDATOR_MIN_SCORE', 3),
     ],
